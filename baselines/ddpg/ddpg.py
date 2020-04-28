@@ -60,8 +60,8 @@ def learn(network, env,
     nb_actions = env.action_space.shape[-1]
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
 
-    memory = Memory(limit=int(1e6), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
-    critic = Critic(network=network, **network_kwargs)
+    memory = Memory(limit=int(1e4), action_shape=env.action_space.shape, observation_shape=env.observation_space.shape)
+    critic = Critic(network="mlp_critic", **network_kwargs)
     actor = Actor(nb_actions, network=network, **network_kwargs)
 
     action_noise = None
@@ -138,6 +138,8 @@ def learn(network, env,
                 # Execute next action.
                 if rank == 0 and render:
                     env.render()
+
+                action[:, 1] += 2 # scale the throttle back to [0, 4]
 
                 # max_action is of dimension A, whereas action is dimension (nenvs, A) - the multiplication gets broadcasted to the batch
                 new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])

@@ -51,7 +51,11 @@ _game_envs['retro'] = {
 
 
 def train(args, extra_args):
-    env_type, env_id = get_env_type(args)
+    if args.env.startswith("donkey"):
+        env_type = "donkey"
+        env_id = args.env
+    else:
+        env_type, env_id = get_env_type(args)
     print('env_type: {}'.format(env_type))
 
     total_timesteps = int(args.num_timesteps)
@@ -90,9 +94,13 @@ def build_env(args):
     alg = args.alg
     seed = args.seed
 
-    env_type, env_id = get_env_type(args)
+    if args.env.startswith("donkey"):
+        env_type = "donkey"
+        env_id = args.env
+    else:
+        env_type, env_id = get_env_type(args)
 
-    if env_type in {'atari', 'retro'}:
+    if env_type in {'atari', 'retro', 'donkey'}:
         if alg == 'deepq':
             env = make_env(env_id, env_type, seed=seed, wrapper_kwargs={'frame_stack': True})
         elif alg == 'trpo_mpi':
@@ -146,7 +154,7 @@ def get_env_type(args):
 
 
 def get_default_network(env_type):
-    if env_type in {'atari', 'retro'}:
+    if env_type in {'atari', 'retro', 'donkey'}:
         return 'cnn'
     else:
         return 'mlp'

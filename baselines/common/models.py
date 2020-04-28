@@ -72,7 +72,7 @@ def build_impala_cnn(unscaled_images, depths=[16,32,32], **conv_kwargs):
 
 
 @register("mlp")
-def mlp(num_layers=2, num_hidden=64, activation=tf.tanh, layer_norm=False):
+def mlp(num_layers=2, num_hidden=64, activation=tf.nn.relu, layer_norm=False):
     """
     Stack of fully-connected layers to be used in a policy / q-function approximator
 
@@ -102,6 +102,43 @@ def mlp(num_layers=2, num_hidden=64, activation=tf.tanh, layer_norm=False):
 
     return network_fn
 
+@register("mlp_critic")
+def mlp(num_layers=2, num_hidden=64, activation=tf.nn.relu, layer_norm=False):
+    """
+    Stack of fully-connected layers to be used in a policy / q-function approximator
+
+    Parameters:
+    ----------
+
+    num_layers: int                 number of fully-connected layers (default: 2)
+
+    num_hidden: int                 size of fully-connected layers (default: 64)
+
+    activation:                     activation function (default: tf.tanh)
+
+    Returns:
+    -------
+
+    function that builds fully connected network with a given input tensor / placeholder
+    """
+    def network_fn(obs, action):
+        # import ipdb; ipdb.set_trace()
+        h = tf.layers.flatten(obs)
+        # Layer 1
+        h = fc(h, 'mlp_fc{}'.format(0), nh=400, init_scale=np.sqrt(2))
+        if layer_norm:
+            h = tf.contrib.layers.layer_norm(h, center=True, scale=True)
+        h = activation(h)
+        h = tf.concat([h, action], axis=-1)
+
+        # Layer 2
+        h = fc(h, 'mlp_fc{}'.format(1), nh=300, init_scale=np.sqrt(2))
+        if layer_norm:
+            h = tf.contrib.layers.layer_norm(h, center=True, scale=True)
+        h = activation(h)
+        return h
+
+    return network_fn
 
 @register("cnn")
 def cnn(**conv_kwargs):
