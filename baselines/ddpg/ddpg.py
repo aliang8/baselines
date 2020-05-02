@@ -139,8 +139,6 @@ def learn(network, env,
                 if rank == 0 and render:
                     env.render()
 
-                action[:, 1] += 2 # scale the throttle back to [0, 4]
-
                 # max_action is of dimension A, whereas action is dimension (nenvs, A) - the multiplication gets broadcasted to the batch
                 new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                 # note these outputs are batched from vecenv
@@ -170,8 +168,6 @@ def learn(network, env,
                         episodes += 1
                         if nenvs == 1:
                             agent.reset()
-
-
 
             # Train.
             epoch_actor_losses = []

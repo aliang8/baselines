@@ -12,7 +12,7 @@ except ImportError:
     MPI = None
 
 import gym
-import gym_donkeycarf
+import gym_donkeycar
 from gym.wrappers import FlattenObservation, FilterObservation
 from baselines import logger
 from baselines.bench import Monitor
@@ -64,22 +64,47 @@ def make_vec_env(env_id, env_type, num_env, seed,
 
 import numpy as np
 class SymmetricActions(gym.Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, env_type, low, high):
         gym.Wrapper.__init__(self, env)
 
+        self.env = env
+        self.env_type = env_type
+        self.low = low
+        self.high = high
         self.action_space = gym.spaces.Box(
-            low=np.array([-1, -2]),
-            high=np.array([1, 2]),
+            low=low,
+            high=high,
             dtype=np.float32
         )
+
+    def step(self, action):
+        if self.env_type == "donkey":
+            action[:, 1] += 2
+        elif self.env_type == "box2d":
+            action[1:] += 0.5
+        action = np.clip(action, self.low, self.high)
+        return self.env.step(action)
 
 def make_donkey_env(env_id, timelimit=True):
     env = gym.make(env_id)
     if not timelimit:
         env = env.env
-    env = SymmetricActions(env)
+    low = np.array([-1, -2])
+    high = -1 * low
+    env = SymmetricActions(env, "donkey", low, high)
     from baselines.common.atari_wrappers import WarpFrame
     env = WarpFrame(env)
+    return env
+
+def make_box2d_env(env_id, timelimit=True):
+    env = gym.make(env_id)
+    if not timelimit:
+        env = env.env
+    low = np.array([-1, -0.5, -0.5])
+    high = -1 * low
+    env = SymmetricActions(env, "box2d", low, high)
+    # from baselines.common.atari_wrappers import WarpFrame
+    # env = WarpFrame(env)
     return env
 
 def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.0, gamestate=None, flatten_dict_observations=True, wrapper_kwargs=None, env_kwargs=None, logger_dir=None, initializer=None):
@@ -102,6 +127,8 @@ def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.
         env = retro_wrappers.make_retro(game=env_id, max_episode_steps=10000, use_restricted_actions=retro.Actions.DISCRETE, state=gamestate)
     elif env_type == "donkey":
         env = make_donkey_env(env_id)
+    elif env_type == "box2d":
+        env = make_box2d_env(env_id)
     else:
         env = gym.make(env_id, **env_kwargs)
 
