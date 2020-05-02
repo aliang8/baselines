@@ -21,6 +21,7 @@ except ImportError:
 def learn(network, env,
           seed=None,
           total_timesteps=None,
+          save_path=None,
           nb_epochs=None, # with default settings, perform 1M steps total
           nb_epoch_cycles=20,
           nb_rollout_steps=100,
@@ -124,6 +125,8 @@ def learn(network, env,
     epoch_actions = []
     epoch_qs = []
     epoch_episodes = 0
+
+    best_eval_return = 0
     for epoch in range(nb_epochs):
         for cycle in range(nb_epoch_cycles):
             # Perform rollouts.
@@ -268,6 +271,14 @@ def learn(network, env,
             if eval_env and hasattr(eval_env, 'get_state'):
                 with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                     pickle.dump(eval_env.get_state(), f)
+
+        eval_return_mean = np.mean(eval_episode_rewards_history)
+        if rank == 0 and save_path and eval_return_mean > best_eval_return:
+            print('Saving new best model with eval return: {}, old eval return: {}'.format(eval_return_mean, best_eval_return))
+            with open(os.path.join(save_path, 'ckpt.pth')) as f:
+                pickle.dump(agent, f)
+
+            best_eval_return = eval_return_mean
 
 
     return agent

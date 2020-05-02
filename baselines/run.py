@@ -77,10 +77,13 @@ def train(args, extra_args):
 
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
 
+    eval_env = build_env(args)
     model = learn(
         env=env,
         seed=seed,
         total_timesteps=total_timesteps,
+        save_path=args.save_path,
+        eval_env=eval_env,
         **alg_kwargs
     )
 
