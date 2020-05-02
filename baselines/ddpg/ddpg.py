@@ -126,7 +126,7 @@ def learn(network, env,
     epoch_qs = []
     epoch_episodes = 0
 
-    best_eval_return = 0
+    best_eval_return = -float('inf')
     for epoch in range(nb_epochs):
         for cycle in range(nb_epoch_cycles):
             # Perform rollouts.
@@ -272,13 +272,13 @@ def learn(network, env,
                 with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                     pickle.dump(eval_env.get_state(), f)
 
-        eval_return_mean = np.mean(eval_episode_rewards_history)
-        if rank == 0 and save_path and eval_return_mean > best_eval_return:
-            print('Saving new best model with eval return: {}, old eval return: {}'.format(eval_return_mean, best_eval_return))
+        epoch_episode_rewards = np.mean(eval_episode_rewards_history)
+        if rank == 0 and save_path and epoch_episode_rewards > best_eval_return:
+            print('Saving new best model with eval return: {}, old eval return: {}'.format(epoch_episode_rewards, best_eval_return))
             with open(os.path.join(save_path, 'ckpt.pth')) as f:
                 pickle.dump(agent, f)
 
-            best_eval_return = eval_return_mean
+            best_eval_return = epoch_episode_rewards
 
 
     return agent
